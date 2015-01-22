@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>GCM Experiment</title>
+  </head>
+  <body>
+    <label for="target">Target GCM id:</label>
+    <input type="text" id="target" value="APA91bErsN6AjaGQ2GTieMfds7YVlFV0zEatesr0UHrfJaguI4GiBF--gXSDtgm9I6f12bNLvmRET6b1zfMCBrbOZCyFBnIx-eiki6YJZ2OQZIDdBw-KviqshGRN0HIX-BUi4MZYSIxJy4IvVobWUYpbn1gdlDjSks1wo_BAAY7VxFQ8A9K6xLI">
+    <label for="contents">Message contents:</label>
+    <input type="text" id="contents" value="def">
+    <button id="send">Send</button>
+    
+    <div id="log">Log messages:</div>
+    
+    <script type="text/javascript">
+      var target = document.querySelector('#target');
+      var message = document.querySelector('#contents');
+      var sendButton = document.querySelector('#send');
+      sendButton.addEventListener('click', sendMessage, false);
+      var logDiv = document.querySelector('#log');
+      
+      function log(message) {
+        logDiv.innerText += '\n' + message;
+      }
+      function sendMessage() {
+        // Send message to /send endpoint
+        var promise = sendAsyncUrlRequest('POST', '/send', JSON.stringify({target: target.value, message: message.value}));
+        promise.then(function(result) {
+          log(result);
+        }).catch(function(error) {
+          log(error.message);
+        });
+      };
+      
+      function sendAsyncUrlRequest(method, url, body) {
+        return new Promise(function(resolve, reject) {
+          var xhr = new XMLHttpRequest();
+          xhr.onreadystatechange = function() {
+            if (xhr.readyState !== 4) {
+              return;
+            }
+            if (xhr.status !== 200) {
+              reject(
+                  Error('Status=' + xhr.status + ', response=' + xhr.responseText));
+              return;
+            }
+            resolve(xhr.responseText);
+          };
+          xhr.open(method, url, true);
+          if (body) {
+            xhr.send(body);
+          } else {
+            xhr.send();
+          }
+        });
+      }
+    
+    </script>
+  </body>
+</html>
