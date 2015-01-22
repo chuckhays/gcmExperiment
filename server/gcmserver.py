@@ -49,6 +49,8 @@ class SendPage(webapp2.RequestHandler):
       contents = message["message"]
       server = "https://android.googleapis.com/gcm/send"
       headers = {
+        # This key is an example and needs to be replaced 
+        # with a valid one to work.
         'Authorization': 'key=AIzaSyCqo1RNv9UzqTXPtKRrU2BaFTNaXS-mTzQ',
         'Content-Type': 'application/json'
       }
