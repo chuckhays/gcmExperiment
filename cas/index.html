@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+{% autoescape true %}
+<html>
+  <head>
+  </head>
+  <body>
+    <button id="del">Del experiment</button>
+    <button id="setn">Set to None experiment</button>
+    <h3>Log 1:</h3>
+    <div id="log1"></div>
+    <h3>Log 2:</h3>
+    <div id="log2"></div>
+    <h3>Log 3:</h3>
+    <div id="log3"></div>
+
+    <script type="text/javascript">
+    function send(method, url, body) {
+      return new Promise(function(resolve, reject) {
+        var xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState !== 4) {
+            return;
+          }
+          if (xhr.status !== 200) {
+            reject(
+                Error('Status=' + xhr.status + ', response=' + xhr.responseText));
+            return;
+          }
+          resolve(xhr.responseText);
+        };
+        xhr.open(method, url, true);
+        xhr.send(body);
+      });
+    }
+    
+    function cb(action, speed, key, value) {
+      body = {
+          action: action,
+          speed: speed,
+          key: key,
+        };
+        if (value) {
+          body.value = value;
+        }
+      return JSON.stringify(body);
+    }
+    key = 'key1';
+    
+    log1 = document.querySelector('#log1');
+    log2 = document.querySelector('#log2');
+    log3 = document.querySelector('#log3');
+    document.querySelector('#del').addEventListener('click', function() {
+      // Create key
+      send("POST", "/go", cb('create', 'normal', key, "Initial value")).then(function(createResult) {
+        log1.innerText += createResult;
+        // Send slow update request, sleep, then send del request so delete
+        // happens between gets and cas for the update.
+        log1.innerText += " sending update";
+        send("POST", "/go", cb('update', 'slow', key, "Updated value")).then(function(updateResult) {
+          log2.innerText += updateResult;
+        }).catch(function(error){
+          log1.innerText += 'Error:' + error;
+        });
+        
+        window.setTimeout(function() {
+          log1.innerText += " sending delete";
+          send("POST", "/go", cb('delete', 'normal', key)).then(function(deleteResult) {
+            log3.innerText += deleteResult;
+          }).catch(function(error){
+          log1.innerText += 'Error:' + error;
+        });
+        }, 2000);
+      }).catch(function(error) {
+        log1.innerText += 'Error:' + error;
+      });
+    }); // end click handler
+    
+    document.querySelector('#setn').addEventListener('click', function() {
+      // Create key
+      send("POST", "/go", cb('create', 'normal', key, "Initial value")).then(function(createResult) {
+        log1.innerText += " sending update";
+        log1.innerText += createResult;
+        // Send slow update request, sleep, then send update to None that
+        // happens between gets and cas for the update.
+        send("POST", "/go", cb('update', 'slow', key, "Updated value")).then(function(updateResult) {
+          log2.innerText += updateResult;
+        }).catch(function(error){
+          log1.innerText += 'Error:' + error;
+        });
+        
+        window.setTimeout(function() {
+          log1.innerText += " sending update to None";
+          send("POST", "/go", cb('update', 'normal', key)).then(function(deleteResult) {
+            log3.innerText += deleteResult;
+          }).catch(function(error){
+          log1.innerText += 'Error:' + error;
+        });
+        }, 2000);
+      }).catch(function(error) {
+        log1.innerText += 'Error:' + error;
+      });
+    }); // end click handler
+
+    
+    </script>
+  </body>
+</html>
+{% endautoescape %}
